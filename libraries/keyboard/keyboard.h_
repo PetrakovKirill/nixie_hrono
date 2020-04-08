@@ -1,0 +1,31 @@
+#ifndef _KEYBOARD_H_
+#define _KEYBOARD_H_
+
+#include "button.h"
+
+
+#define KEYS_QUANTITY   (3)
+
+
+class keyboard {
+public:
+typedef void (*KeyboardHandler_t)(uint8_t inexKey, button::buttonState_t keyState, void *pUserData);
+
+    keyboard(gpio **gpioArray, uint8_t qauntity, KeyboardHandler_t Handler, void *pUserData);
+    void SetHandler(KeyboardHandler_t Handler, void *pUserData);
+    void Scan(void);
+    void Reset(void);
+
+private:
+    friend void ButtonHandler(button::buttonState_t state, void *pUserData);
+    void Handler(button::buttonState_t state);
+
+    KeyboardHandler_t UserHandler;
+    void             *pUserData;
+
+    uint8_t currentScan;
+    uint8_t quantity;
+    button  keys[KEYS_QUANTITY];
+};
+
+#endif /* _KEYBOARD_H_ */

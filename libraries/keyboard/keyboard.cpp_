@@ -1,0 +1,64 @@
+#include <string.h>
+#include <stddef.h>
+#include "button.h"
+
+static void ButtonHandler(button::buttonState_t state, void *pUserData);
+
+#include "keyboard.h"
+
+
+static void ButtonHandler(button::buttonState_t state, void *pUserData) {
+    keyboard *pInst = (keyboard *)pUserData;
+    pInst->Handler(state);
+}
+
+   
+
+keyboard :: keyboard(gpio **gpioArray, uint8_t quantity, KeyboardHandler_t Handler, void *pUserData) {
+    uint8_t i, cntAvliabale;
+    
+    this->quantity    = quantity;
+
+    cntAvliabale = (KEYS_QUANTITY < quantity) ? (KEYS_QUANTITY) : (quantity);
+
+    for (i = 0; i < cntAvliabale; ++i) {
+        keys[i].Init(gpioArray[i], ButtonHandler, (void *)this);
+    }
+    
+    SetHandler(Handler, pUserData);
+}
+
+
+
+void keyboard :: Scan(void) {
+    uint8_t i;
+    for (i = 0; i < quantity; ++i) {
+        currentScan = i;
+        keys[i].Scan();
+    }
+}
+
+
+
+void keyboard :: Handler(button::buttonState_t state) {
+    if (UserHandler) {
+        UserHandler(currentScan, state, pUserData);
+        Reset();
+    }
+}
+
+
+void keyboard :: Reset(void) {
+    uint8_t i;
+    for (i = 0; i < quantity; ++i) {
+        currentScan = i;
+        keys[i].Reset();
+    }
+}
+
+
+void keyboard :: SetHandler(KeyboardHandler_t Handler, void *pUserData) {
+    this->UserHandler = Handler;
+    this->pUserData   = pUserData;
+    Reset();
+}
