@@ -1,6 +1,13 @@
 #ifndef _glitchProxy_h_
 #define _glitchProxy_h_
 
+/* 
+ * Прокси объект реализующий glitch-эффект.
+ * Эффект носит случайный характер с заданной вероятностью.
+ * 1 глюк - это последовательность случайных миганий.
+ * Период миганий из последовательности изменяется слчайным образом.
+ *  */
+
 class glitchProxy {
 public:
     glitchProxy(nexDisplay *pDisplay, timerStrategy *timStrategy, uint32_t period);
@@ -9,9 +16,6 @@ public:
     void Enable(void);
     void Disable(void);
     bool IsEnable(void);
-
-    // void Show(bool state);
-    // void Print(char *str);
 
 private:
     class timerEvent : public event {
@@ -56,7 +60,7 @@ glitchProxy :: glitchProxy(nexDisplay *pDisplay, timerStrategy *timStrategy, uin
 
 
 /* Обработчик события таймера
- * Внутри вызываются непосредстенно обработчики дейстия.
+ * Внутри вызываются непосредстенно обработчики действия.
  * Для переключения ипользуем флаг glitchAction, который
  * отражает состояние глюка в реальном времени.
  */
@@ -97,7 +101,7 @@ void glitchProxy :: Disable(void) {
 
 
 /**
- * Состояние актиквности прокси-объекта
+ * Состояние активности прокси-объекта
  */
 bool glitchProxy :: IsEnable(void) {
     return (isEnable);
@@ -157,6 +161,8 @@ void glitchProxy :: GlitchProxyEffect(void) {
 
 
     if (--glitchProxyCnt) {
+        /* Определяем время воспроизведения следующего глюка из 
+         * определеной последовательности */
         tim.SetInterval(random(30, 150));
     } else {
         /* Последовательность закончилась, возвращаем период */
@@ -178,22 +184,5 @@ void glitchProxy :: Period(uint8_t value) {
     period = value;
     tim.SetInterval(value);
 }
-
-
-
-// /**
-//  * Вкл.Выкл.
-//  */
-// void glitchProxy :: Show(bool state) {
-//     displ->Show(state);
-// }
-
-
-
-// /* Функция печати интерфейса display */
-// void glitchProxy :: Print(char *str) {
-//     displ->Print(str);
-// }
-
 
 #endif /* _glitchProxy_h_ */

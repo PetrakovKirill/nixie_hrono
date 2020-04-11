@@ -2,6 +2,12 @@
 #define _blinkProxy_h_
 
 
+/* 
+ * Прокси-объект реализующий мигающий эффект.
+ * Эффект носит периодичный характер.
+ * Период миганий задается при инстанцироании объекта.
+ *  */
+
 class blinkProxy {
 public:
     blinkProxy(nexDisplay *pDisplay, timerStrategy *timStrategy, uint32_t blinkPeriod);
@@ -48,11 +54,7 @@ blinkProxy :: blinkProxy(nexDisplay *pDisplay, timerStrategy *timStrategy, uint3
 
 
 
-/* Обработчик события таймера
- * Внутри вызываются непосредстенно обработчики дейстия.
- * Для переключения ипользуем флаг glitchAction, который
- * отражает состояние глюка в реальном времени.
- */
+/* Обработчик события таймера */
 void blinkProxy :: timerEvent :: EventHandler(void) {
     inst->blinkProxyEffect();
 }
@@ -60,7 +62,7 @@ void blinkProxy :: timerEvent :: EventHandler(void) {
 
 
 /**
- *  Визуальная реализация глюка
+ *  Визуальная реализация мигалки
  */
 void blinkProxy :: blinkProxyEffect(void) {
     uint8_t bright;

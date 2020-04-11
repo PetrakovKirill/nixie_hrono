@@ -1,9 +1,13 @@
 #ifndef _KEYBOARD_CONTROLLER_H_
 #define _KEYBOARD_CONTROLLER_H_
 
+/* 
+ * Объект управвдения клавиатурой. 
+ * Отслеживвает события кнопок и манипулирая объектами часов и контроллеров визуализации */
+
 class keyboardController {
 public:
-    keyboardController(gpio *btn1, gpio *btn2, gpio *btn3, clock *main, displayStrategy *visual);
+    keyboardController(gpio *btn1, gpio *btn2, gpio *btn3, clock *main, visualController *visual);
     void Scan(void);
 private:
     class switchClockEvent : public event {
@@ -80,7 +84,7 @@ private:
     button key2;
     button key3;
 
-    displayStrategy *visualControl;
+    visualController *visualControl;
 
     bool isMain    = true;
     bool adjIsHour = true;
@@ -91,7 +95,7 @@ private:
 
 
 
-keyboardController :: keyboardController(gpio *btn1, gpio *btn2, gpio *btn3, clock *main, displayStrategy *visual) :
+keyboardController :: keyboardController(gpio *btn1, gpio *btn2, gpio *btn3, clock *main, visualController *visual) :
     /* Инициализируем объекты-события */
     switchClock(this), switchAdjst(this), switchGlitch(this), increment(this), decrement(this), switchEffect(this), 
     /* Управляющие кнопки */
@@ -111,7 +115,7 @@ keyboardController :: keyboardController(gpio *btn1, gpio *btn2, gpio *btn3, clo
     /* Клик по правой кнопке переключает режимы перелистывания цифр */
     key3.AddEvent(&switchEffect, button::CLICK);
 
-    Serial.println(__FUNCTION__);
+    // Serial.println(__FUNCTION__);
 }
 
 
@@ -125,9 +129,7 @@ void keyboardController :: Scan(void) {
 void keyboardController :: SwitchClockHandler(void) {
     isMain = !isMain;
 
-
     /* Врубаем мигание */
-
     if (isMain) {
         /* Удержать "выбор" - настройка времени */
         key1.RemoveEvent(button::CLICK);
@@ -170,8 +172,6 @@ void keyboardController :: SwitchClockHandler(void) {
         /* Отображаем настройку */
         adjClock.ShowTime();
     }
-
-    Serial.println(__FUNCTION__);
 }
 
 
@@ -184,14 +184,12 @@ void keyboardController :: SwitchAdjstHandler(void) {
         adjClock.AdjustmentMinutes();
     }
     adjClock.ShowTime();
-    Serial.println(__FUNCTION__);
 }
 
 
 
 void keyboardController :: SwitchGlitchHandler(void) {
     visualControl->SwitchGlitch(!visualControl->GlitchIsOn());
-    Serial.println(__FUNCTION__);
 }
 
 
@@ -199,7 +197,6 @@ void keyboardController :: SwitchGlitchHandler(void) {
 void keyboardController :: IncrementHandler(void) {
     adjClock.Increment();
     adjClock.ShowTime();
-    Serial.println(__FUNCTION__);
 }
 
 
@@ -207,16 +204,14 @@ void keyboardController :: IncrementHandler(void) {
 void keyboardController :: DecrementHandler(void) {
     adjClock.Decrement();
     adjClock.ShowTime();
-    Serial.println(__FUNCTION__);
 }
 
 
 
 void keyboardController :: SwitchEffectHandler(void) {
     visualControl->SwitchNext();
-    visualControl->Print("    ");
+    visualControl->Print((char *)"    ");
     mainClock->ShowTime();
-    Serial.println(__FUNCTION__);
 }
 
 

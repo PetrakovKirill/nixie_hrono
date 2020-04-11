@@ -1,6 +1,10 @@
 #ifndef _fadeProxy_h_
 #define _fadeProxy_h_
 
+/* 
+ * Прокси-объект реализующий плавное изменение символов дисплея .
+ *  */
+
 class fadeProxy : public display {
 public:
     fadeProxy(nexDisplay *pDisplay, timerStrategy *timStrategy,  uint32_t period);
@@ -27,10 +31,11 @@ private:
     timerEvent     timEvent;
     timer          tim;
 
-    bool       isFadout;
-    char       lastPrint[(sizeof(nixieRaw_t) + 1)];
-    uint8_t    maskChange;
-    uint8_t    cnt;
+    bool        isFadout;
+    char        newPrint[(sizeof(nixieRaw_t) + 1)];
+    const char *lastPrint;
+    uint8_t     maskChange;
+    uint8_t     cnt;
 
     nexDisplay    *displ;
 };
@@ -57,7 +62,7 @@ void fadeProxy :: timerEvent :: EventHandler(void) {
 
 
 
-
+/* Визуализация затухания */
 void fadeProxy :: Fadeout(void) {
     uint8_t i;
     for(i = 0; i < sizeof(nixieRaw_t); ++i) {
@@ -67,8 +72,10 @@ void fadeProxy :: Fadeout(void) {
     }
 
     if (cnt == PWM_MAX) {
+        /* Предыдущая печать затухла, 
+         * пора печатать новую */
         isFadout = false;
-        displ->Print(lastPrint);
+        displ->Print(newPrint);
     }
 
     cnt++;
@@ -78,12 +85,8 @@ void fadeProxy :: Fadeout(void) {
 
 
 
-
-
-
-
 /**
- *  Визуальная реализация глюка
+ *  Визуализация разгорания
  */
 void fadeProxy :: Fadein(void) {
     uint8_t i;
@@ -93,6 +96,7 @@ void fadeProxy :: Fadein(void) {
         }
     }
 
+    /* Разжигаем пока яркость не достигнет максимума */
     if (cnt - PWM_MAX < PWM_MAX) {
         cnt++;
         tim.ResetCounter();
@@ -102,10 +106,8 @@ void fadeProxy :: Fadein(void) {
 
 
 
-
-
 /**
- * Параметризация периода расчета появления события "Глюк"
+ * Параметризация скорости плавного затухания и разгорания
  */
 void fadeProxy :: SetPeriod(uint32_t value) {
     tim.SetInterval(value);
@@ -132,6 +134,8 @@ void fadeProxy :: Show(bool state) {
 void fadeProxy :: Print(char *str) {
     uint8_t i;
 
+    lastPrint = displ->LastPrint();
+
     maskChange = 0x00;
     for(i = 0; i < sizeof(nixieRaw_t); ++i) {
         /* Отмечаем в маске те разряды которые были изменены */
@@ -140,8 +144,8 @@ void fadeProxy :: Print(char *str) {
         }
     }
 
-    memcpy(lastPrint, str, sizeof(nixieRaw_t));
-    lastPrint[sizeof(nixieRaw_t)] = '\0';
+    memcpy(newPrint, str, sizeof(nixieRaw_t));
+    newPrint[sizeof(nixieRaw_t)] = '\0';
 
     cnt = 0;
     isFadout = true;

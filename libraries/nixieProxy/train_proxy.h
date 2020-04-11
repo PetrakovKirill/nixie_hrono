@@ -1,6 +1,11 @@
 #ifndef _trainProxy_h_
 #define _trainProxy_h_
 
+
+/* 
+ * Прокси-объект реализующий эффект заезжающей строки .
+ *  */
+
 class trainProxy : public display {
 public:
     trainProxy(nexDisplay *pDisplay, timerStrategy *timStrategy,  uint32_t period);
@@ -50,8 +55,6 @@ void trainProxy :: timerEvent :: EventHandler(void) {
 
 
 
-
-
 void trainProxy :: Effect(void) {
     displ->Print(&buffer[cnt]);
     Serial.println(&buffer[cnt]);
@@ -63,9 +66,8 @@ void trainProxy :: Effect(void) {
 
 
 
-
 /**
- * Параметризация периода расчета появления события "Глюк"
+ * Параметризация скорости эффекта
  */
 void trainProxy :: SetPeriod(uint32_t value) {
     tim.SetInterval(value);
@@ -98,7 +100,6 @@ void trainProxy :: Print(char *str) {
     memcpy(&buffer[0],              lastPrint, length);
     memset(&buffer[length],         ' ',       length);
     memcpy(&buffer[length +length], str,       length);
-    // memcpy(lastPrint , str,       sizeof(nixieRaw_t));
     cnt = 0;
     Effect();
 }

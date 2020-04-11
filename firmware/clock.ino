@@ -7,26 +7,31 @@
 #include "rtc_clock.h"
 #include "adjustment_clock.h"
 #include <timer_strategy.h>
+#include <serial_command.h>
 
 #include <button.h>
 
-/* TODO: Вынести во вкладки .ino */
+/* TODO: 
+    Вынести во вкладки .ino
+    Хз по каким критериям IDE определяет последовательность объединения
+    файлов, поэтому пусть пока поживут в хидерах. */
 #include <glitch_proxy.h>
 #include <blink_proxy.h>
 #include <fade_proxy.h>
 #include <train_proxy.h>
 #include <visual_control.h>
 #include <keyboard_controller.h>
+#include <serial_controller.h>
 
 
-millisDispatch_t<3> dispatch;
+millisDispatch_t<4> dispatch;
 timerStrategy       timSoftStrategy;
 timerStrategy       timHardStrategy;
 
 
 static clock              *mainClock;
 static keyboardController *keyboard;
-
+static serialController   *serialControl;
 
 
 /* *************************************************************** *
@@ -51,6 +56,10 @@ void ShowCurrentTime(void) {
 }
 
 
+void SerialControl(void) {
+    serialControl->Polling();
+}
+
 
 void KeyboardScaner(void) {
     keyboard->Scan();
@@ -63,8 +72,8 @@ void SoftwareTimers(void) {
 }
 
 
-static void ConstTimerInit() {
-    /* Прервыния таймера с периодичностью 7.8кГц */
+static void HardwareTimerInit() {
+    /* таймер с периодичностью 7.8кГц, для генерации прерывания */
     OCR2A   = 255;
     TCCR2A |= (1 << WGM21);
     TIMSK2 |= (1 << OCIE2A);
@@ -72,13 +81,14 @@ static void ConstTimerInit() {
 
     /* Генератор для повышающего преобразователя */
     gpioAVR(&PORTB, 1, gpio::OUT_PP);
-    TCCR1B = (TCCR1B & 0b11111000) | 0x01;
+    TCCR1B  = (TCCR1B & 0b11111000) | 0x01;
     TCCR1A |= (1<<COM1A1);
     OCR1A = 180;
 }
 
 
 
+/* Используем для работы динамической индикации */
 ISR(TIMER2_COMPA_vect) {
     timHardStrategy.Tick();
 }
@@ -91,7 +101,8 @@ ISR(TIMER2_COMPA_vect) {
 
 void setup(void) {
     Serial.begin(9600);
-    ConstTimerInit();
+
+    HardwareTimerInit();
 
     /* Пины управления анодами */
     static gpio *anodes[4] = {
@@ -121,7 +132,7 @@ void setup(void) {
     static glitchProxy glitchInstance(&displayInstance, &timSoftStrategy, 3000);
     static blinkProxy  blinkInstance(&displayInstance,  &timSoftStrategy, 300);
 
-    /* Прокси объекты реализующие эффекты перелистывавнии */
+    /* Прокси объекты реализующие эффекты перелистывавния */
     static fadeProxy   fadeInstance(&displayInstance,   &timSoftStrategy, 15);
     static trainProxy  trainInstance(&displayInstance,  &timSoftStrategy, 100);
     
@@ -133,14 +144,15 @@ void setup(void) {
     };
 
     /* прокси-объект управляющий выбором спецэффекта  */
-    static displayStrategy flipControl(flipList, sizeof(flipList) / sizeof(*flipList), &glitchInstance, &blinkInstance);
+    static visualController flipControl(flipList, sizeof(flipList) / sizeof(*flipList), 
+                                        &glitchInstance, &blinkInstance);
 
     /* Объект отслеживания реального времени */
     static rtcSim rtcInstance(&timSoftStrategy);
 
     /* Объект часов связанный с объектом реального времени 
-     * используется при работе в режиме отображения текуего времени.
-     * Для отображения необходим обект дисплея. Передаем проскси объект
+     * используется при работе в режиме отображения текущего времени.
+     * Для отображения необходим объект дисплея. Передаем проскси-объект
      * для использования эффектов при перелистывании. */
     static rtcClock hrono(static_cast<display *>(&flipControl), 
                           static_cast<rtc     *>(&rtcInstance));
@@ -148,19 +160,26 @@ void setup(void) {
     /* Объект-для отображения процесса установки времени */
     static adjustmentClock adjHrono(static_cast<display *>(&displayInstance));
 
-    /* Объекты клавиатуры */
+    /* Объекты - управления всей кухней */
+    /* Объекты пинов к которым подключены кнопки */
     static gpioAVR btn1(&PORTD, 7, gpio::IN_PULLUP);
     static gpioAVR btn2(&PORTB, 0, gpio::IN_PULLUP);
     static gpioAVR btn3(&PORTB, 4, gpio::IN_PULLUP);
 
+    /* объект клавиатуры */
     static keyboardController keyboardInstance(&btn1, &btn2, &btn3, &hrono, &flipControl);
-  
-    /* Инициализация абстрактных интерфейсов */
-    mainClock = &hrono;
-    keyboard  = &keyboardInstance;
 
-    // /* Регистрация задач в диспетчере */
+    /* Объект управления через последовательный порт */
+    static serialController   serialCmd(&Serial, &hrono, &flipControl);
+    
+    /* Инициализация абстрактных интерфейсов */
+    mainClock     = &hrono;
+    keyboard      = &keyboardInstance;
+    serialControl = &serialCmd;
+    
+    /* Регистрация задач в диспетчере */
     dispatch.AddTask(ShowCurrentTime, 500);
+    dispatch.AddTask(SerialControl,   100);
     dispatch.AddTask(KeyboardScaner,  50);
     dispatch.AddTask(SoftwareTimers,  1);
 }

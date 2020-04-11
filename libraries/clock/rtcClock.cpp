@@ -1,6 +1,7 @@
 #include "rtc_clock.h"
 #include <stdio.h>
 
+
 #define SEC_24_HOURS    (86400)
 #define SEC_1_HOUR      ( 3600)
 #define SEC_1_MIN       (   60)
@@ -23,7 +24,6 @@ void rtcClock :: ShowTime(void) {
     currentTime = time->GetTime();
     hour = (currentTime % SEC_24_HOURS) / SEC_1_HOUR;
     min  = (currentTime % SEC_1_HOUR)   / SEC_1_MIN;
-    
     snprintf(printString, sizeof(printString), "%02u%02u", 
                                 hour, min);
 

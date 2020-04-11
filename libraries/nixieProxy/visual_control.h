@@ -1,10 +1,12 @@
-#ifndef _displayStrategy_h_
-#define _displayStrategy_h_
+#ifndef _visual_controller_h_
+#define _visual_controller_h_
 
+/* Прокси-объект, агрегирующий другие прокси-объекты отвечающие за визуализацию.
+ * Объект управляет текущей визуализацией. */
 
-class displayStrategy : public display {
+class visualController : public display {
 public:
-    displayStrategy(display **array, uint8_t quantity, glitchProxy *glitch, blinkProxy *blink);
+    visualController(display **array, uint8_t quantity, glitchProxy *glitch, blinkProxy *blink);
     void    SetStrategy(uint8_t numStrategy);
     uint8_t GetStrategy(void);
     void    SwitchNext(void);
@@ -37,7 +39,7 @@ private:
 
 
 
-displayStrategy :: displayStrategy(display **array, uint8_t quantity, glitchProxy *glitch, blinkProxy *blink) {
+visualController :: visualController(display **array, uint8_t quantity, glitchProxy *glitch, blinkProxy *blink) {
     this->glitch = (glitch);
     this->blink  = (blink);
     cntDisplays  = (quantity);
@@ -47,7 +49,7 @@ displayStrategy :: displayStrategy(display **array, uint8_t quantity, glitchProx
 
 
 
-void displayStrategy :: SetStrategy(uint8_t numStrategy) {
+void visualController :: SetStrategy(uint8_t numStrategy) {
     if (numStrategy < cntDisplays) {
         currentIndexDisplay = numStrategy;
         current = displs[currentIndexDisplay];
@@ -56,19 +58,19 @@ void displayStrategy :: SetStrategy(uint8_t numStrategy) {
 
 
 
-uint8_t displayStrategy :: GetStrategy(void) {
+uint8_t visualController :: GetStrategy(void) {
     return (currentIndexDisplay);
 }
 
 
 
-void displayStrategy :: SwitchNext(void) {
+void visualController :: SwitchNext(void) {
     currentIndexDisplay = (currentIndexDisplay + 1) % cntDisplays;
     current = displs[currentIndexDisplay];
 }
 
 
-void displayStrategy :: SwitchGlitch(bool state) {
+void visualController :: SwitchGlitch(bool state) {
     if (glitch) {
         if (state) {
             glitch->Enable();
@@ -80,7 +82,7 @@ void displayStrategy :: SwitchGlitch(bool state) {
 
 
 
-void displayStrategy :: SwitchBlink(bool state) {
+void visualController :: SwitchBlink(bool state) {
     if (blink) {
         if (state) {
             blink->Enable();
@@ -92,7 +94,7 @@ void displayStrategy :: SwitchBlink(bool state) {
 
 
 
-bool displayStrategy :: GlitchIsOn(void) {
+bool visualController :: GlitchIsOn(void) {
     bool result = false;
     if (glitch) {
         result = glitch->IsEnable();
@@ -103,7 +105,7 @@ bool displayStrategy :: GlitchIsOn(void) {
 
 
 
-bool displayStrategy :: BlinkIsOn(void) {
+bool visualController :: BlinkIsOn(void) {
     bool result = false;
     if (glitch) {
         result = blink->IsEnable();
@@ -114,34 +116,34 @@ bool displayStrategy :: BlinkIsOn(void) {
 
 
 
-void displayStrategy :: PrintBlock(bool block) {
+void visualController :: PrintBlock(bool block) {
     isBlock = block;
 }
 
 
 
-bool displayStrategy :: PrintIsBlock(void) {
+bool visualController :: PrintIsBlock(void) {
     return (isBlock);
 }
 
 
 
-display * displayStrategy :: GetDisplay(void) {
+display * visualController :: GetDisplay(void) {
     return (current);
 }
 
 
 
-void displayStrategy :: Show(bool state) {
+void visualController :: Show(bool state) {
     displs[currentIndexDisplay]->Show(state);
 }
 
 
 
-void displayStrategy :: Print(char *str) {
+void visualController :: Print(char *str) {
     if (isBlock == false) {
         current->Print(str);
     }
 }
 
-#endif /* _displayStrategy_h_ */
+#endif /* _visual_controller_h_ */
