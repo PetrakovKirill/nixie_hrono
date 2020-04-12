@@ -128,6 +128,7 @@ void serialController :: SwitchEffect(void) {
 
 
 void serialController :: Print(void) {
+    display  *displ;
     size_t    lentok, len;
     char     *curPtr;
 
@@ -140,8 +141,14 @@ void serialController :: Print(void) {
     }
     curPtr += lentok;
 
+    /* Получай интерфейс дисплея в обход блокировки */
+    displ = visualControl->GetDisplay();
+
+    /* Блокируем печать для тех кто испольхует главный прокси дисплей */
     visualControl->PrintBlock(true);
-    visualControl->Print(curPtr);
+
+    /* Печатаем */
+    displ->Print(curPtr);
 }
 
 
